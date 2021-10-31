@@ -1,52 +1,66 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Apr 12 15:36:17 2016
-@author: Erick Obregon Fonseca
-@carnet: 2016123157
-"""
-from scipy import misc
-import matplotlib.pyplot as plotter
-import numpy
+'''
+Created on Tue Apr 12 15:36 2016
+Last update on Sat 16 10:57 2021
+'''
+
+__author__ = "Erick Andres Obregon Fonseca"
+__copyright__ = "Copyright 2021"
+__credits__ = []
+__license__ = "GPL"
+__version__ = "1.1"
+__maintainer__ = "Erick Andres Obregon Fonseca"
+__email__ = "erickobregonf@gmail.com"
+__status__ = "Production"
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+from PIL import Image
 import sys
 
-from imgfilter import Filtro
+from imgfilter import Filter
 
 
-def test1():
-    # Cambia el limite de la pila
-    sys.setrecursionlimit(10**6)
-    print("Test 1 running")
-    # Variable para almacenar el nombre o la ruta donde se extraera la imagen
-    imagenAbrir = str(input("Digite el nombre o la ruta de la imagen a trabajar: "))
-    # Abrir imagen
-    imagenGS = misc.imread(imagenAbrir, 1)
-    # Definir el numero de filas a trabajar
-    numFilas = len(imagenGS)
-    # Definir el numero de columnas a trabajar
-    numColumnas =len(imagenGS[0])
-    # Preguntar al usuario el ancho de la ventana
-    anchoVentana = (int(input("Por favor digite el ancho de la ventana: ")))
-    # Inicializacion en ceros de la imagen
-    imagenFiltrada = numpy.zeros((numFilas, numColumnas))
-    # Crear filtrador
-    filtrador = Filtro(numFilas, numColumnas) 
-    # Lectura de la imagen en escala de grises
-    plotter.imshow(imagenGS, plotter.get_cmap('gray'))
-    # Muestra de la imagen en escala de grises
-    plotter.show()
-    # Llamado para el filtrado de la imagen
-    filtrador.filtroDeMedianas(imagenGS, anchoVentana, imagenFiltrada)
-    print("Esta es su imagen filtrada")
-    # Mostrar imagen filtrada
-    plotter.imshow(imagenFiltrada, plotter.get_cmap('gray'))
-    plotter.show()
-    # Variable donde se almacena el nombre o la ruta donde se guardara la imagen
-    nombreGuardar = str(input("Donde guardara la imagen y con que nombre? "))
-    # Guardar imagen filtrada
-    misc.imsave(nombreGuardar, imagenFiltrada)
-    # Informar que la imagen fue guardada
-    print("Su imagen fue guardada con exito!")
-    print("Terminado!")
+def main():
+    sys.setrecursionlimit(10**9)
 
-# Realizar prueba
-test1() 
+    # Open image
+    img_path: str = input('Path of the image: ')
+    gray_img = np.asarray(Image.open(img_path).convert('L'))
+
+    # Show gray image
+    plt.imshow(gray_img, plt.get_cmap('gray'))
+    plt.title('Gray image')
+    plt.show()
+
+    # Get image dimensions
+    dim: tuple = gray_img.shape
+
+    # Ask for window size
+    window_size: int = int(input('Window size of the filter: '))
+
+    # Empty image for result
+    filtered_img: np.ndarray = np.zeros(dim)
+
+    # Filter instance
+    filter: Filter = Filter(dim[0], dim[1]) 
+
+    # Filter image
+    filter.median(gray_img, window_size, filtered_img)
+
+    # Show filtered image
+    plt.imshow(filtered_img, plt.get_cmap('gray'))
+    plt.title('Filtered image')
+    plt.show()
+
+    # Save filtered image
+    filtered_img_path: str = input('Filtered image path and name to save: ')
+    plt.imsave(filtered_img_path, filtered_img)
+
+    print('Image saved successfully!')
+    print('Finished!')
+
+
+if __name__ == '__main__':
+    main() 

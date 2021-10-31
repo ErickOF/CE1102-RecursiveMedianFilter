@@ -1,125 +1,107 @@
 import numpy as np
 
 
-# Clase filtro
-class Filtro:
-    # Inicializar el constructor de la clase
-    def __init__(self, numFilas, numColumnas):
-        self.numFilas = numFilas
-        self.numColumnas = numColumnas
+class Filter:
+    def __init__(self, row_number: int, col_number: int):
+        """Filter class
 
-    # Metodo de filtrar por medianas
-    def filtroDeMedianas(self, imagenGS, anchoVentana, imagenFiltrada): 
-        # Se iniciliza la fila actual en cero
-        filaActual = 0
-        # Filtrar imagen del ruido
-        imagenFiltrada = self.filtrar(imagenGS, anchoVentana, filaActual, imagenFiltrada)
-        # Imagen ya filtrada de ruido parcialmente
-        return imagenFiltrada
+        Args:
+            row_number (int): number of rows
+            col_number (int): number of columns
+        """
+        self.__row_number: int = row_number
+        self.__col_number: int = col_number
 
-    # Metodo para filtrar la imagen
-    def filtrar(self, imagenGS, anchoVentana, filaActual, imagenFiltrada):
-        # Cuando el numero de filas actuales sea menor al de la imagen
-        if (filaActual < self.numFilas):
-            # Filtrar por filas
-            self.filtroDeFilas(imagenGS, filaActual, anchoVentana, [], imagenFiltrada)
-            return imagenFiltrada
+    def median(self, gray_img: np.ndarray, window_size: int,
+               filtered_img: np.ndarray) -> None:
+        """Filter image using median method
+
+        Args:
+            gray_img (np.ndarray): image to filter
+            window_size (int): window size of the filter
+            filtered_img (np.ndarray): output with the filtered image
+        """
+        self.__filter(gray_img, window_size // 2, filtered_img)
+
+    def __filter(self, gray_img: np.ndarray, mid_window: int,
+                 filtered_img: np.ndarray, i: int = 0) -> None:
+        """Auxiliary function
+
+        Args:
+            gray_img (np.ndarray): image to filter
+            mid_window (int): mid of the window
+            filtered_img (np.ndarray): output with the filtered image
+            i (int): current row
+        """
+        # End of the image
+        if (i == self.__row_number - mid_window):
+            return
+        # Filter image
         else:
-            return imagenFiltrada
+            # Filter row
+            self.__filter_row(gray_img, mid_window, filtered_img, i)
+            # Next row
+            self.__filter(gray_img, mid_window, filtered_img, i + 1)
+    
+    def __filter_row(self, gray_img: np.ndarray, mid_window: int,
+                     filtered_img: np.ndarray, i: int, j: int = 0) -> None:
+        """Filter by row
 
-    # Metodo para filtrar filas
-    def filtroDeFilas(self, imagenGS, filaActual, anchoVentana, filaFiltrada, imagenFiltrada):
-        # Se inicializa la fila Actual en cero
-        columnaActual = 0
-        # Obtener fila filtrada
-        filaFiltrada = self.matriz(imagenGS, anchoVentana, columnaActual, filaActual, filaFiltrada)
-        # Sumar la fila filtrada a la imagen filtrada
-        imagenFiltrada[filaActual] += filaFiltrada
-        # Volver a llamar al metodo filtrar
-        return self.filtrar(imagenGS, anchoVentana, filaActual + 1, imagenFiltrada)
-
-    def matriz(self, imagenGS, anchoVentana, columnaActual, filaActual, filaFiltrada):
-        # Se encarga de realizar todos los pasos para sacar la mediana
-        # Cuando la columana actual es menor que el total de columnas
-        if (columnaActual < self.numColumnas):
-            # Variable para tomar los pixeles de la izquierda y arriba
-            x = -(anchoVentana - ((anchoVentana // 2) + 1 ))
-            # Variable para tomar los pixeles de la derecha y abajo
-            y = anchoVentana - (anchoVentana // 2)
-            if (columnaActual + x < 0 or filaActual + x < 0 or y + filaActual > self.numFilas or y + columnaActual > self.numColumnas):
-                filaFiltrada += [imagenGS[filaActual][columnaActual]]
-                return self.matriz(imagenGS, anchoVentana, columnaActual + 1, filaActual, filaFiltrada)
-            else:
-                # Tomar ventana 
-                tomarVentana = imagenGS[filaActual + x : filaActual + y, columnaActual + x : columnaActual + y]
-                # Convertir ventana a matriz
-                matriz = tomarVentana.tolist()
-                # Unir la matrices en una lista plana
-                lista = self.concatenarMatriz(matriz, anchoVentana, [])
-                # Llamar el metodo de ordenamiento de la lista
-                listaOrdenada = self.burbuja(lista)
-                # Sacar mediana
-                mediana = self.sacarMediana(listaOrdenada)
-                # Hacer recursivo del llamado del metodo
-                # Mover a la siguiente columna y sumar la mediana
-                return self.matriz(imagenGS, anchoVentana, columnaActual + 1, filaActual, filaFiltrada + [mediana])
-        # Devolver las fila filtrada
+        Args:
+            gray_img (np.ndarray): image to filter
+            mid_window (int): mid of the window
+            filtered_img (np.ndarray): output with the filtered image
+            i (int): current row
+            j (int): current column
+        """
+        # End of the row
+        if (j == self.__col_number - mid_window):
+            return
         else:
-            return filaFiltrada
+            # Get the new pixel for the image
+            filtered_img[i, j] = self.__get_median(gray_img, mid_window, i, j)
+            # Next pixel
+            self.__filter_row(gray_img, mid_window, filtered_img, i, j + 1)
 
-    def concatenarMatriz(self, matriz1, anchoVentana, matriz):
-        # Condicion de parada
-        if (matriz1 == []):
-            # Regresar la matrz
-            return matriz
-        # Sumar cada pixel de la matriz
+    def __get_median(self, gray_img: np.ndarray, mid_window: int, i: int,
+                     j: int) -> float:
+        """Get the median of the window
+
+        Args:
+            gray_img (np.ndarray): input image
+            mid_window (int): mid of the window
+            i (int): current row of the image
+            j (int): current column of the image
+
+        Returns:
+            float: median of the window
+        """
+        # Get window
+        window: np.ndarray = gray_img[max(0, i - mid_window):min(i + mid_window + 1, self.__row_number),
+                                      max(0, j - mid_window):min(j + mid_window + 1, self.__col_number)].flatten()
+        self.__sort(window, window.size)
+
+        # Return median of the window
+        return window[window.size // 2]
+
+    def __sort(self, array: np.array, i: int, j: int = 1) -> None:
+        """Sorting using bubble algorithm
+
+        Args:
+            array (np.array): array to sort
+            i (int): current index of the array
+            j (int): pivote
+        """
+        # Array is sorted
+        if (i == 0):
+            return
+        # Start again
+        elif (j == i):
+            self.__sort(array, i - 1, 1)
         else:
-            matriz += matriz1[len(matriz1) - 1]
-            return self.concatenarMatriz(matriz1[:-1], anchoVentana - 1, matriz)
+            # Check if the previous element is greater
+            if (array[j - 1] > array[j]):
+                array[j - 1], array[j] = array[j], array[j - 1]
 
-    # Metodo de ordenamiento burbuja
-    def burbuja(self, lista):
-        # Verificar si esta ordenada
-        if (self.ordenada(lista) == True):
-            # Devolver la matriz ordenada
-            return lista
-        # Ordenar matriz
-        else:
-            return self.burbuja(self.burbujaAux(lista, []))
-
-    # Metodo para saber si la matriz esta ordenada
-    def ordenada(self, lista):
-        # Condicion de parada
-        if (len(lista) == 1):
-            # Devolver que la matriz si estaba ordenada
-            return True
-        # Evaluar cada elemento de menor a mayor
-        elif (lista[0] <= lista[1]):
-            # Llamado recursivo del metodo
-            return self.ordenada(lista[1:])
-        # Devolver que la lista no esta ordenada
-        else:
-            return False
-
-    # Metodo que ordena la lista
-    def burbujaAux(self, lista, listaOrdenada):
-        # Cuando solo queda un elemento
-        if (len(lista) == 1):
-            # Sumar el ultimo elemento de la lista
-            return listaOrdenada + lista
-        # Ordenar elementos de menor a mayor
-        # Si el primier elemento es menor al segundo
-        elif (lista[0] <= lista[1]):
-            # Se corta y se suma a la matriz ordenada
-            return self.burbujaAux(lista[1:], listaOrdenada + [lista[0]])
-        # Cuando el primer elemento es mayor que el primero
-        else:
-            # Se mantiene el primer elemento y el segundo se suma a la lista ordenada
-            return self.burbujaAux([lista[0]] + lista[2:], listaOrdenada + [lista[1]])
-
-    # Metodo para obtener la mediana
-    def sacarMediana(self, listaOrdenada):
-        # Sacar la mediana de una ventana
-        mediana = listaOrdenada[len(listaOrdenada) // 2]
-        # Devolver la mediana
-        return mediana
+            # Next element
+            self.__sort(array, i, j + 1)
